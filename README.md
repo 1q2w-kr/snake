@@ -1,12 +1,21 @@
 # Snake (fun/snake)
 
-16x16 클래식 스네이크. 키보드/버튼/스와이프로 조작할 수 있고, 먹이를 먹을 때마다 속도가 조금씩 빨라집니다.
+16x16 클래식 스네이크. 키보드/버튼/스와이프로 조작할 수 있고, 먹이를 먹을 때마다 속도가 조금씩 빨라집니다. 로그인하면 점수가 저장되고 전체/개인 리더보드를 볼 수 있습니다.
 
 ## 로컬 실행
 ```
 docker compose up -d
 # http://localhost:8000/fun/snake/
 ```
+
+## DB 준비
+- 마이그레이션: `source /var/www/html/fun/snake/db/migrations/0001_init.sql`
+- 테이블: `snake_scores` (score/length/최고속도/시간, 회원 로그인 기준 랭킹)
+
+## API
+- POST `/fun/snake/api/game.php` action `submit` (로그인 필요): `{ sessionToken, score, length, durationMs, maxSpeedFps }`
+- GET `/fun/snake/api/game.php?action=leaderboard&limit=10`
+- GET `/fun/snake/api/game.php?action=history&limit=10` (로그인 시)
 
 ## 조작법
 - 방향키 / WASD / 화면 버튼 / 스와이프

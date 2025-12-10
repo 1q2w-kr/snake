@@ -92,6 +92,30 @@ if (file_exists($headerInclude)) {
         <p class="snake__controls-hint">키보드 방향키 / WASD · 터치 스와이프 지원</p>
     </section>
 
+    <section class="snake__boards">
+        <div class="snake__panel">
+            <h2 class="snake__panel-title">전체 리더보드</h2>
+            <div class="snake__panel-body" data-leaderboard>
+                <div class="snake__empty">순위를 불러오는 중...</div>
+            </div>
+        </div>
+
+        <?php if ($isLoggedIn): ?>
+        <div class="snake__panel">
+            <h2 class="snake__panel-title">내 기록</h2>
+            <div class="snake__panel-body" data-history>
+                <div class="snake__empty">기록을 불러오는 중...</div>
+            </div>
+        </div>
+        <?php else: ?>
+        <div class="snake__panel snake__panel--muted">
+            <h2 class="snake__panel-title">내 기록</h2>
+            <p class="snake__muted-text">로그인하면 내 스네이크 기록을 볼 수 있습니다.</p>
+            <a class="snake__btn snake__btn--primary" href="/?act=dispMemberLoginForm">로그인</a>
+        </div>
+        <?php endif; ?>
+    </section>
+
     <section class="snake__guide">
         <h2>플레이 방법</h2>
         <ul>

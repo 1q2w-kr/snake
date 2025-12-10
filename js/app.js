@@ -33,9 +33,13 @@
             this.food = this.spawnFood();
             this.score = 0;
             this.speedMs = INITIAL_SPEED_MS;
+            this.maxSpeedFps = 1000 / this.speedMs;
+            this.sessionToken = crypto.randomUUID();
             this.running = false;
             this.gameOver = false;
             this.loopId = null;
+            this.startTime = null;
+            this.elapsedMs = 0;
             this.notify();
         }
 
@@ -46,8 +50,11 @@
                 score: this.score,
                 length: this.snake.length,
                 speedMs: this.speedMs,
+                maxSpeedFps: this.maxSpeedFps,
+                durationMs: this.getDurationMs(),
                 running: this.running,
                 gameOver: this.gameOver,
+                sessionToken: this.sessionToken,
             };
         }
 
@@ -57,6 +64,7 @@
                 this.reset();
             }
             this.running = true;
+            this.startTime = performance.now();
             this.loop();
             this.notify();
         }
@@ -65,6 +73,7 @@
             this.pause();
             this.reset();
             this.running = true;
+            this.startTime = performance.now();
             this.loop();
             this.notify();
         }
@@ -75,6 +84,10 @@
                 this.loopId = null;
             }
             this.running = false;
+            if (this.startTime !== null) {
+                this.elapsedMs += performance.now() - this.startTime;
+                this.startTime = null;
+            }
             this.notify();
         }
 
@@ -118,6 +131,7 @@
             } else {
                 this.score += 10;
                 this.speedMs = Math.max(MIN_SPEED_MS, this.speedMs - SPEED_STEP_MS);
+                this.maxSpeedFps = Math.max(this.maxSpeedFps, 1000 / this.speedMs);
                 this.food = this.spawnFood();
                 this.loop(); // restart loop to apply new speed
             }
@@ -167,6 +181,14 @@
                 this.onChange(this.getState());
             }
         }
+
+        getDurationMs() {
+            const now = performance.now();
+            if (this.startTime !== null) {
+                return Math.floor(this.elapsedMs + (now - this.startTime));
+            }
+            return Math.floor(this.elapsedMs);
+        }
     }
 
     class SnakeUI {
@@ -182,11 +204,15 @@
             this.lengthEl = document.querySelector('[data-length]');
             this.statusRegion = document.querySelector('[data-status-region]');
             this.startButtons = Array.from(document.querySelectorAll('[data-action="start"]'));
+            this.leaderboardEl = document.querySelector('[data-leaderboard]');
+            this.historyEl = document.querySelector('[data-history]');
+            this.isLoggedIn = !!(window.__FUN_AUTH_STATE__ && window.__FUN_AUTH_STATE__.loggedIn);
 
             this.bestScore = Number(localStorage.getItem(BEST_SCORE_KEY) || 0);
             this.cells = new Map();
             this.state = null;
             this.hasPlayed = false;
+            this.lastSubmittedToken = null;
 
             this.boardEl.style.setProperty('--snake-size', GRID_SIZE);
             this.game = new SnakeGame(
@@ -199,6 +225,10 @@
             this.render(this.game.getState());
             this.showOverlay('준비 완료', '시작 버튼을 눌러 주세요.', '시작');
             this.updateStartLabels('start');
+            this.loadLeaderboard();
+            if (this.isLoggedIn) {
+                this.loadHistory();
+            }
         }
 
         initBoard() {
@@ -318,6 +348,9 @@
             this.updateStartLabels('restart');
             this.announce('게임 오버');
             this.render(state);
+            if (this.isLoggedIn) {
+                this.submitScore(state);
+            }
         }
 
         showOverlay(title, text, actionLabel = '다시 시작') {
@@ -385,6 +418,102 @@
             if (this.overlayAction) {
                 this.overlayAction.textContent = label;
             }
+        }
+
+        async submitScore(state) {
+            if (!state || !state.sessionToken || state.sessionToken === this.lastSubmittedToken) {
+                return;
+            }
+            const payload = {
+                action: 'submit',
+                sessionToken: state.sessionToken,
+                score: state.score,
+                length: state.length,
+                durationMs: state.durationMs,
+                maxSpeedFps: Number(state.maxSpeedFps.toFixed(2)),
+            };
+
+            try {
+                const res = await fetch('/fun/snake/api/game.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    this.lastSubmittedToken = state.sessionToken;
+                    this.announce('기록이 저장되었습니다.');
+                    this.loadLeaderboard();
+                    if (this.isLoggedIn) {
+                        this.loadHistory();
+                    }
+                } else {
+                    console.warn('Score submit failed', data);
+                }
+            } catch (err) {
+                console.error('Score submit error', err);
+            }
+        }
+
+        async loadLeaderboard() {
+            if (!this.leaderboardEl) return;
+            try {
+                const res = await fetch('/fun/snake/api/game.php?action=leaderboard&limit=10');
+                const data = await res.json();
+                if (data.ok && data.scores.length > 0) {
+                    this.leaderboardEl.innerHTML = this.renderTable(data.scores, true);
+                } else {
+                    this.leaderboardEl.innerHTML = '<div class="snake__empty">아직 기록이 없습니다.</div>';
+                }
+            } catch (err) {
+                console.error('Leaderboard error', err);
+                this.leaderboardEl.innerHTML = '<div class="snake__empty">순위를 불러올 수 없습니다.</div>';
+            }
+        }
+
+        async loadHistory() {
+            if (!this.historyEl) return;
+            try {
+                const res = await fetch('/fun/snake/api/game.php?action=history&limit=10');
+                const data = await res.json();
+                if (data.ok && data.scores.length > 0) {
+                    this.historyEl.innerHTML = this.renderTable(data.scores, false);
+                } else {
+                    this.historyEl.innerHTML = '<div class="snake__empty">기록이 없습니다.</div>';
+                }
+            } catch (err) {
+                console.error('History error', err);
+                this.historyEl.innerHTML = '<div class="snake__empty">기록을 불러올 수 없습니다.</div>';
+            }
+        }
+
+        renderTable(scores, showRank) {
+            let html = '<table class="snake__table"><thead><tr>';
+            if (showRank) {
+                html += '<th>순위</th><th>닉네임</th>';
+            }
+            html += '<th>점수</th><th>길이</th><th>최고 속도</th><th>시간</th><th>날짜</th></tr></thead><tbody>';
+
+            scores.forEach((row) => {
+                const date = new Date(row.createdAt);
+                const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+                html += '<tr>';
+                if (showRank) {
+                    html += `<td>${row.rank}</td><td>${this.escapeHtml(row.nickname)}</td>`;
+                }
+                html += `<td>${row.score}</td><td>${row.length}</td><td>${row.speed || row.maxSpeedFps || '-'}</td><td>${row.duration || '-'}</td><td>${dateStr}</td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text ?? '';
+            return div.innerHTML;
         }
     }
 

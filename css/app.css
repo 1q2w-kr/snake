@@ -5,13 +5,13 @@
 :root {
     --snake-font: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --snake-bg: var(--fun-color-bg, #0b1220);
-    --snake-surface: var(--fun-color-surface, rgba(255, 255, 255, 0.06));
+    --snake-surface: var(--fun-color-surface, rgba(255, 255, 255, 0.08));
     --snake-text: var(--fun-color-text, #f8fafc);
     --snake-accent: var(--fun-color-accent, #38bdf8);
-    --snake-muted: rgba(248, 250, 252, 0.6);
-    --snake-border: rgba(255, 255, 255, 0.08);
-    --snake-board: rgba(255, 255, 255, 0.04);
-    --snake-grid: rgba(255, 255, 255, 0.05);
+    --snake-muted: rgba(248, 250, 252, 0.75);
+    --snake-border: rgba(255, 255, 255, 0.12);
+    --snake-board: rgba(255, 255, 255, 0.06);
+    --snake-grid: rgba(255, 255, 255, 0.08);
     --snake-food: #f97316;
     --snake-head: #22d3ee;
     --snake-body: linear-gradient(135deg, #22d3ee 0%, #0ea5e9 100%);
@@ -279,6 +279,75 @@ body.snake {
     padding-left: 1.1rem;
     color: var(--snake-muted);
     line-height: 1.6;
+}
+
+.snake__boards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.snake__panel {
+    background: var(--snake-surface);
+    border: 1px solid var(--snake-border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+}
+
+.snake__panel--muted {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.snake__panel-title {
+    margin: 0 0 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.snake__panel-body {
+    min-height: 120px;
+}
+
+.snake__table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--snake-text);
+}
+
+.snake__table th,
+.snake__table td {
+    text-align: left;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--snake-border);
+}
+
+.snake__table th {
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--snake-muted);
+}
+
+.snake__table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.snake__table tbody tr:hover {
+    background: rgba(56, 189, 248, 0.07);
+}
+
+.snake__empty {
+    padding: 1rem;
+    color: var(--snake-muted);
+    text-align: center;
+}
+
+.snake__muted-text {
+    color: var(--snake-muted);
+    margin: 0;
 }
 
 .snake__footer {
