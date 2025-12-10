@@ -4,7 +4,7 @@
 
 :root {
     --snake-font: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --snake-bg: var(--fun-color-bg, #0b1220);
+    --snake-bg: #0b1220;
     --snake-surface: rgba(8, 12, 24, 0.82);
     --snake-text: #e2e8f0;
     --snake-accent: var(--fun-color-accent, #38bdf8);
@@ -15,6 +15,22 @@
     --snake-food: #f97316;
     --snake-head: #22d3ee;
     --snake-body: linear-gradient(135deg, #22d3ee 0%, #0ea5e9 100%);
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --snake-bg: #f8fafc;
+        --snake-surface: #ffffff;
+        --snake-text: #0f172a;
+        --snake-accent: #2563eb;
+        --snake-muted: #475569;
+        --snake-border: rgba(15, 23, 42, 0.12);
+        --snake-board: rgba(15, 23, 42, 0.06);
+        --snake-grid: rgba(15, 23, 42, 0.08);
+        --snake-food: #ea580c;
+        --snake-head: #0ea5e9;
+        --snake-body: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+    }
 }
 
 * {
@@ -50,6 +66,10 @@ body.snake {
     gap: 1.25rem;
 }
 
+#main.snake__container {
+    background: transparent;
+}
+
 .snake__hero {
     display: flex;
     align-items: center;
@@ -58,7 +78,7 @@ body.snake {
     background: linear-gradient(120deg, rgba(34, 211, 238, 0.18), rgba(56, 189, 248, 0.08));
     border: 1px solid var(--snake-border);
     border-radius: 14px;
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem 1.75rem;
 }
 
 .snake__eyebrow {

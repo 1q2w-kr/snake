@@ -246,6 +246,7 @@
             this.render(this.game.getState());
             this.showOverlay('준비 완료', '시작 버튼을 눌러 주세요.', '시작');
             this.updateStartLabels('start');
+            this.toggleHistory();
             this.loadLeaderboard();
             if (this.isLoggedIn) {
                 this.loadHistory();
