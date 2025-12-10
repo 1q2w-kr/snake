@@ -194,6 +194,10 @@ body.snake {
     backdrop-filter: blur(4px);
 }
 
+.snake__overlay[hidden] {
+    display: none !important;
+}
+
 .snake__overlay-box {
     background: var(--snake-surface);
     border: 1px solid var(--snake-border);

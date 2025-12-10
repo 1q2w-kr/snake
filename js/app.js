@@ -181,10 +181,12 @@
             this.speedEl = document.querySelector('[data-speed]');
             this.lengthEl = document.querySelector('[data-length]');
             this.statusRegion = document.querySelector('[data-status-region]');
+            this.startButtons = Array.from(document.querySelectorAll('[data-action="start"]'));
 
             this.bestScore = Number(localStorage.getItem(BEST_SCORE_KEY) || 0);
             this.cells = new Map();
             this.state = null;
+            this.hasPlayed = false;
 
             this.boardEl.style.setProperty('--snake-size', GRID_SIZE);
             this.game = new SnakeGame(
@@ -195,7 +197,8 @@
             this.initBoard();
             this.bindControls();
             this.render(this.game.getState());
-            this.showOverlay('준비 완료', '시작 버튼을 눌러 주세요.');
+            this.showOverlay('준비 완료', '시작 버튼을 눌러 주세요.', '시작');
+            this.updateStartLabels('start');
         }
 
         initBoard() {
@@ -284,6 +287,10 @@
         handleStart() {
             this.game.restart();
             this.hideOverlay();
+            if (!this.hasPlayed) {
+                this.hasPlayed = true;
+            }
+            this.updateStartLabels('restart');
             this.announce('게임을 시작합니다.');
         }
 
@@ -297,6 +304,7 @@
             } else {
                 this.game.start();
                 this.hideOverlay();
+                this.updateStartLabels('restart');
                 this.announce('게임이 재개되었습니다.');
             }
         }
@@ -306,15 +314,19 @@
                 this.bestScore = state.score;
                 localStorage.setItem(BEST_SCORE_KEY, String(this.bestScore));
             }
-            this.showOverlay('게임 오버', '다시 시작 버튼을 눌러 새로 플레이하세요.');
+            this.showOverlay('게임 오버', '다시 시작 버튼을 눌러 새로 플레이하세요.', '다시 시작');
+            this.updateStartLabels('restart');
             this.announce('게임 오버');
             this.render(state);
         }
 
-        showOverlay(title, text) {
+        showOverlay(title, text, actionLabel = '다시 시작') {
             if (!this.overlayEl) return;
             this.overlayTitle.textContent = title;
             this.overlayText.textContent = text;
+            if (this.overlayAction) {
+                this.overlayAction.textContent = actionLabel;
+            }
             this.overlayEl.hidden = false;
         }
 
@@ -363,6 +375,16 @@
         announce(message) {
             if (!this.statusRegion) return;
             this.statusRegion.textContent = message;
+        }
+
+        updateStartLabels(mode) {
+            const label = !this.hasPlayed && mode !== 'restart' ? '시작' : '다시 시작';
+            this.startButtons.forEach(btn => {
+                btn.textContent = label;
+            });
+            if (this.overlayAction) {
+                this.overlayAction.textContent = label;
+            }
         }
     }
 
