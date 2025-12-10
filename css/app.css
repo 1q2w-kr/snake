@@ -5,13 +5,13 @@
 :root {
     --snake-font: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --snake-bg: var(--fun-color-bg, #0b1220);
-    --snake-surface: var(--fun-color-surface, rgba(255, 255, 255, 0.08));
-    --snake-text: var(--fun-color-text, #f8fafc);
+    --snake-surface: rgba(8, 12, 24, 0.82);
+    --snake-text: #e2e8f0;
     --snake-accent: var(--fun-color-accent, #38bdf8);
-    --snake-muted: rgba(248, 250, 252, 0.75);
-    --snake-border: rgba(255, 255, 255, 0.12);
-    --snake-board: rgba(255, 255, 255, 0.06);
-    --snake-grid: rgba(255, 255, 255, 0.08);
+    --snake-muted: #cbd5e1;
+    --snake-border: rgba(255, 255, 255, 0.16);
+    --snake-board: rgba(255, 255, 255, 0.08);
+    --snake-grid: rgba(255, 255, 255, 0.12);
     --snake-food: #f97316;
     --snake-head: #22d3ee;
     --snake-body: linear-gradient(135deg, #22d3ee 0%, #0ea5e9 100%);
@@ -311,6 +311,12 @@ body.snake {
     min-height: 120px;
 }
 
+.snake__panel-guest {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
 .snake__table {
     width: 100%;
     border-collapse: collapse;
@@ -337,6 +343,10 @@ body.snake {
 
 .snake__table tbody tr:hover {
     background: rgba(56, 189, 248, 0.07);
+}
+
+.snake__hidden {
+    display: none !important;
 }
 
 .snake__empty {

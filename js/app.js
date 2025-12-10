@@ -225,6 +225,8 @@
             this.startButtons = Array.from(document.querySelectorAll('[data-action="start"]'));
             this.leaderboardEl = document.querySelector('[data-leaderboard]');
             this.historyEl = document.querySelector('[data-history]');
+            this.historyPanel = document.querySelector('[data-history-panel]');
+            this.historyGuest = document.querySelector('[data-history-guest]');
             this.isLoggedIn = !!(window.__FUN_AUTH_STATE__ && window.__FUN_AUTH_STATE__.loggedIn);
 
             this.bestScore = Number(localStorage.getItem(BEST_SCORE_KEY) || 0);
@@ -248,6 +250,7 @@
             if (this.isLoggedIn) {
                 this.loadHistory();
             }
+            this.bindAuthUpdates();
         }
 
         initBoard() {
@@ -330,6 +333,26 @@
                 } else {
                     this.game.changeDirection(dy > 0 ? 'down' : 'up');
                 }
+            });
+        }
+
+        bindAuthUpdates() {
+            const applyState = (auth) => {
+                const logged = !!(auth && auth.loggedIn);
+                if (logged === this.isLoggedIn) return;
+                this.isLoggedIn = logged;
+                this.toggleHistory();
+                if (this.isLoggedIn) {
+                    this.loadHistory();
+                }
+            };
+
+            if (window.__FUN_AUTH_STATE__) {
+                applyState(window.__FUN_AUTH_STATE__);
+            }
+
+            document.addEventListener('fun:auth-state', (e) => {
+                applyState(e.detail);
             });
         }
 
@@ -439,8 +462,22 @@
             }
         }
 
+        toggleHistory() {
+            if (!this.historyEl || !this.historyPanel) return;
+            if (this.isLoggedIn) {
+                this.historyEl.hidden = false;
+                this.historyGuest?.classList.add('snake__hidden');
+            } else {
+                this.historyEl.hidden = true;
+                this.historyGuest?.classList.remove('snake__hidden');
+            }
+        }
+
         async submitScore(state) {
             if (!state || !state.sessionToken || state.sessionToken === this.lastSubmittedToken) {
+                return;
+            }
+            if (!this.isLoggedIn) {
                 return;
             }
             const payload = {
