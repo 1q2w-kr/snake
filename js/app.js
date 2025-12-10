@@ -507,9 +507,11 @@
                     }
                 } else {
                     console.warn('Score submit failed', data);
+                    this.announce('기록 저장에 실패했습니다.');
                 }
             } catch (err) {
                 console.error('Score submit error', err);
+                this.announce('기록 저장 중 오류가 발생했습니다.');
             }
         }
 

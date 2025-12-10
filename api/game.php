@@ -14,8 +14,9 @@ error_reporting(E_ALL);
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
 $host = parse_url($origin, PHP_URL_HOST);
-$allowedHosts = ['1q2w.kr', 'localhost', '127.0.0.1'];
-if ($origin && !in_array($host, $allowedHosts, true)) {
+$currentHost = $_SERVER['HTTP_HOST'] ?? null;
+$allowedHosts = array_filter(['1q2w.kr', 'www.1q2w.kr', 'localhost', '127.0.0.1', $currentHost]);
+if ($origin && $host && !in_array($host, $allowedHosts, true)) {
     jsonError('invalid_origin', 'Request origin not allowed', 403);
 }
 
