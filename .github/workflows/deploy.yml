@@ -1,0 +1,90 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prune non-runtime files
+        run: |
+          set -euxo pipefail
+          rm -rf .git .github
+          rm -rf scripts script tests test db node_modules
+          rm -f README.md README.MD README_KR.md README_KO.md AGENTS.md agents.md SPEC.md TODO.md DOCKER.md docker-compose.yml Dockerfile Makefile test.txt
+
+      - name: Inject build version into asset references
+        run: |
+          set -euxo pipefail
+          VER="${GITHUB_SHA::7}-$(date -u +%Y%m%d%H%M%S)"
+          sed -i "s/__BUILD__/${VER}/g" index.php || true
+
+      - name: Resolve deployment target
+        id: cfg
+        run: |
+          set -euxo pipefail
+          SERVER="${{ secrets.FTP_SERVER }}"
+          USERNAME="${{ secrets.FTP_USERNAME }}"
+          PASSWORD="${{ secrets.FTP_PASSWORD }}"
+          if [ -z "$SERVER" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+            echo "::error::Configure FTP_SERVER/FTP_USERNAME/FTP_PASSWORD secrets before deploying." >&2
+            exit 1
+          fi
+          DIR="/www/fun/snake/"
+          case "$DIR" in
+            */) : ;;
+            *) DIR="${DIR%/}/" ;;
+          esac
+          {
+            echo "server=$SERVER"
+            echo "username=$USERNAME"
+            echo "password=$PASSWORD"
+            echo "dir=$DIR"
+            echo "proto=ftp"
+            echo "port=21"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cafe24 via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ steps.cfg.outputs.server }}
+          username: ${{ steps.cfg.outputs.username }}
+          password: ${{ steps.cfg.outputs.password }}
+          protocol: ${{ steps.cfg.outputs.proto }}
+          server-dir: ${{ steps.cfg.outputs.dir }}
+          port: ${{ steps.cfg.outputs.port }}
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git/**
+            **/.github/**
+            **/.DS_Store
+            scripts/**
+            script/**
+            tests/**
+            test/**
+            db/**
+            node_modules/**
+            db.local.php
+            config.local.php
+            config/local.php
+            README.md
+            README.MD
+            README_KR.md
+            README_KO.md
+            AGENTS.md
+            agents.md
+            SPEC.md
+            TODO.md
+            DOCKER.md
+            docker-compose.yml
+            Dockerfile
+            Makefile
+            test.txt

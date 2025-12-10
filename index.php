@@ -17,7 +17,7 @@ $isLoggedIn = !empty($session['loggedIn']);
     <link rel="stylesheet" href="/fun/common/header.css?v=1.0" />
 
     <!-- Service styles -->
-    <link rel="stylesheet" href="/fun/snake/css/app.css?v=1.0" />
+    <link rel="stylesheet" href="/fun/snake/css/app.css?v=__BUILD__" />
 </head>
 <body class="snake">
 <?php
@@ -122,6 +122,6 @@ if (file_exists($headerInclude)) {
 <script src="/fun/common/header.js" defer></script>
 
 <!-- Game scripts -->
-<script src="/fun/snake/js/app.js?v=1.0" defer></script>
+<script src="/fun/snake/js/app.js?v=__BUILD__" defer></script>
 </body>
 </html>
