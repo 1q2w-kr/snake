@@ -40,6 +40,9 @@
             this.loopId = null;
             this.startTime = null;
             this.elapsedMs = 0;
+            this.inputQueue = [];
+            this.frameCounter = 0;
+            this.lastInputFrame = -1;
             this.notify();
         }
 
@@ -100,19 +103,20 @@
 
         changeDirection(direction) {
             if (!DIRECTIONS[direction]) return;
-            const currentVector = DIRECTIONS[this.direction];
-            const nextVector = DIRECTIONS[direction];
-
-            // Prevent reversing into itself
-            if (currentVector.x + nextVector.x === 0 && currentVector.y + nextVector.y === 0) {
-                return;
-            }
-
-            this.nextDirection = direction;
+            this.enqueueDirection(direction);
         }
 
         tick() {
             if (!this.running) return;
+
+            // Consume at most one queued input for this frame
+            while (this.inputQueue.length > 0) {
+                const nextDir = this.inputQueue.shift();
+                if (!this.isReverse(nextDir)) {
+                    this.nextDirection = nextDir;
+                    break;
+                }
+            }
 
             this.direction = this.nextDirection;
             const head = this.snake[this.snake.length - 1];
@@ -137,6 +141,7 @@
             }
 
             this.notify();
+            this.frameCounter += 1;
         }
 
         isCollision(pos, willGrow) {
@@ -188,6 +193,20 @@
                 return Math.floor(this.elapsedMs + (now - this.startTime));
             }
             return Math.floor(this.elapsedMs);
+        }
+
+        enqueueDirection(direction) {
+            if (this.lastInputFrame !== this.frameCounter) {
+                this.inputQueue = [];
+                this.lastInputFrame = this.frameCounter;
+            }
+            this.inputQueue.push(direction);
+        }
+
+        isReverse(direction) {
+            const currentVector = DIRECTIONS[this.direction];
+            const nextVector = DIRECTIONS[direction];
+            return currentVector.x + nextVector.x === 0 && currentVector.y + nextVector.y === 0;
         }
     }
 
