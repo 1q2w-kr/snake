@@ -264,35 +264,51 @@ function ensureDatabaseSchema($conn) {
             return;
         }
 
+        $migrationSql = null;
         $migrationPaths = [
             '/www/fun/snake/db/migrations/0001_init.sql',
             __DIR__ . '/../db/migrations/0001_init.sql',
         ];
-        $migrationFile = null;
         foreach ($migrationPaths as $path) {
             if (file_exists($path)) {
-                $migrationFile = $path;
+                $migrationSql = file_get_contents($path);
                 break;
             }
         }
-        if (!$migrationFile) {
-            error_log('snake: migration file not found');
-            return;
+        if ($migrationSql === false || $migrationSql === null) {
+            // Inline fallback if file cannot be read
+            $migrationSql = <<<SQL
+CREATE TABLE IF NOT EXISTS snake_scores (
+    score_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    member_srl BIGINT UNSIGNED NULL,
+    identity_hash CHAR(64) NOT NULL,
+    session_token CHAR(36) NOT NULL,
+    score INT UNSIGNED NOT NULL,
+    length INT UNSIGNED NOT NULL,
+    max_speed_fps DECIMAL(5,2) NOT NULL,
+    duration_ms INT UNSIGNED NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_session_token (session_token),
+    INDEX idx_ranking (score, length, duration_ms),
+    INDEX idx_member_history (member_srl, created_at DESC),
+    INDEX idx_identity (identity_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SQL;
         }
-        $sql = file_get_contents($migrationFile);
-        if ($sql === false) {
-            error_log('snake: failed to read migration file');
-            return;
-        }
-        if ($conn->multi_query($sql)) {
+
+        if ($conn->multi_query($migrationSql)) {
             do {
                 if ($res = $conn->store_result()) {
                     $res->free();
                 }
             } while ($conn->more_results() && $conn->next_result());
-            error_log('snake: database schema initialized');
+            // Final existence check to ensure success
+            $check = $conn->query("SHOW TABLES LIKE 'snake_scores'");
+            if (!$check || $check->num_rows === 0) {
+                throw new RuntimeException('snake_scores table still missing after migration');
+            }
         } else {
-            error_log('snake: migration failed - ' . $conn->error);
+            throw new RuntimeException('migration failed - ' . $conn->error);
         }
     } catch (Throwable $e) {
         error_log('snake: schema check failed - ' . $e->getMessage());
