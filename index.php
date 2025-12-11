@@ -44,7 +44,6 @@ if (file_exists($headerInclude)) {
         </div>
         <div class="snake__cta">
             <button class="snake__btn snake__btn--primary" data-action="start">시작 / 다시하기</button>
-            <button class="snake__btn" data-action="pause">일시정지</button>
         </div>
     </header>
 

@@ -272,9 +272,6 @@
             document.querySelectorAll('[data-action="start"]').forEach(btn => {
                 btn.addEventListener('click', () => this.handleStart());
             });
-            document.querySelectorAll('[data-action="pause"]').forEach(btn => {
-                btn.addEventListener('click', () => this.handlePauseToggle());
-            });
             this.overlayAction?.addEventListener('click', () => this.handleStart());
 
             document.querySelectorAll('[data-direction]').forEach(btn => {
@@ -365,21 +362,6 @@
             }
             this.updateStartLabels('restart');
             this.announce('게임을 시작합니다.');
-        }
-
-        handlePauseToggle() {
-            if (this.state?.running) {
-                this.game.pause();
-                this.showOverlay('일시정지', '계속하려면 다시 시작을 누르세요.');
-                this.announce('게임이 일시정지되었습니다.');
-            } else if (this.state?.gameOver) {
-                this.handleStart();
-            } else {
-                this.game.start();
-                this.hideOverlay();
-                this.updateStartLabels('restart');
-                this.announce('게임이 재개되었습니다.');
-            }
         }
 
         onGameOver(state) {
