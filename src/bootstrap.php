@@ -6,6 +6,19 @@ if (file_exists($authBridge)) {
     require_once $authBridge;
 }
 
+// DB connection (shared helper)
+$FUN_DB_ENV_PREFIX = 'SNAKE';
+$dbConfigPaths = [
+    '/www/fun/common/db.php',
+    __DIR__ . '/../../common/db.php',
+];
+foreach ($dbConfigPaths as $path) {
+    if (file_exists($path)) {
+        require_once $path;
+        break;
+    }
+}
+
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/consent.php';
 require_once __DIR__ . '/db.php';
