@@ -35,7 +35,7 @@ if (file_exists($headerInclude)) {
 }
 ?>
 
-<main class="snake__container" id="main" tabindex="-1">
+<main class="snake__container" id="main" tabindex="-1" data-requires-db>
     <header class="snake__hero">
         <div>
             <p class="snake__eyebrow">새로운 퍼즐 · 16x16 보드</p>

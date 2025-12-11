@@ -93,10 +93,6 @@ try {
 }
 
 function handleSubmit($conn, $payload, $memberSrl, $isLoggedIn) {
-    if (!$isLoggedIn || !$memberSrl) {
-        throw new RuntimeException('LOGIN_REQUIRED');
-    }
-
     $sessionToken = $payload['sessionToken'] ?? '';
     $score = (int)($payload['score'] ?? 0);
     $length = (int)($payload['length'] ?? 0);
@@ -109,14 +105,14 @@ function handleSubmit($conn, $payload, $memberSrl, $isLoggedIn) {
     if ($score <= 0 || $length < 3) {
         throw new RuntimeException('INVALID_SCORE');
     }
-    if ($durationMs < 2000) {
+    if ($durationMs < 500) {
         throw new RuntimeException('DURATION_TOO_SHORT');
     }
     if ($maxSpeedFps <= 0) {
         throw new RuntimeException('INVALID_SPEED');
     }
 
-    $identityHash = hash('sha256', 'member_' . $memberSrl);
+    $identityHash = hash('sha256', $memberSrl ? ('member_' . $memberSrl) : ('guest_' . ($_SERVER['REMOTE_ADDR'] ?? '') . ($_SERVER['HTTP_USER_AGENT'] ?? '')));
 
     $stmt = $conn->prepare("SELECT score_id FROM snake_scores WHERE session_token = ?");
     $stmt->bind_param('s', $sessionToken);
@@ -135,13 +131,13 @@ function handleSubmit($conn, $payload, $memberSrl, $isLoggedIn) {
         throw new RuntimeException('INSERT_FAILED');
     }
 
-    // rank (logged-in only)
+    // rank (logged-in only; guests excluded from rank)
     $stmt = $conn->prepare(
         "SELECT COUNT(*) AS rank FROM snake_scores
          WHERE member_srl IS NOT NULL
          AND (score > ? OR (score = ? AND length > ?) OR (score = ? AND length = ? AND duration_ms < ?))"
     );
-    $stmt->bind_param('iiiii', $score, $score, $length, $score, $length, $durationMs);
+    $stmt->bind_param('iiiiii', $score, $score, $length, $score, $length, $durationMs);
     $stmt->execute();
     $rankData = $stmt->get_result()->fetch_assoc();
     $rank = (int)$rankData['rank'] + 1;
@@ -151,19 +147,22 @@ function handleSubmit($conn, $payload, $memberSrl, $isLoggedIn) {
     $totalData = $stmt->get_result()->fetch_assoc();
     $totalEntries = (int)$totalData['total'];
 
-    $stmt = $conn->prepare(
-        "SELECT COUNT(*) as count FROM snake_scores
-         WHERE member_srl = ?
-         AND (score > ? OR (score = ? AND length > ?) OR (score = ? AND length = ? AND duration_ms < ?))"
-    );
-    $stmt->bind_param('iiiiiii', $memberSrl, $score, $score, $length, $score, $length, $durationMs);
-    $stmt->execute();
-    $pbData = $stmt->get_result()->fetch_assoc();
-    $isPersonalBest = (int)$pbData['count'] === 0;
+    $isPersonalBest = false;
+    if ($memberSrl) {
+        $stmt = $conn->prepare(
+            "SELECT COUNT(*) as count FROM snake_scores
+             WHERE member_srl = ?
+             AND (score > ? OR (score = ? AND length > ?) OR (score = ? AND length = ? AND duration_ms < ?))"
+        );
+        $stmt->bind_param('iiiiiii', $memberSrl, $score, $score, $length, $score, $length, $durationMs);
+        $stmt->execute();
+        $pbData = $stmt->get_result()->fetch_assoc();
+        $isPersonalBest = (int)$pbData['count'] === 0;
+    }
 
     jsonSuccess([
-        'rank' => $rank,
-        'totalEntries' => $totalEntries,
+        'rank' => $memberSrl ? $rank : null,
+        'totalEntries' => $memberSrl ? $totalEntries : null,
         'isPersonalBest' => $isPersonalBest,
     ]);
 }
@@ -174,7 +173,6 @@ function handleLeaderboard($conn, $params) {
                    COALESCE(m.nick_name, '익명') AS nickname
             FROM snake_scores s
             LEFT JOIN rhymix_member m ON s.member_srl = m.member_srl
-            WHERE s.member_srl IS NOT NULL
             ORDER BY s.score DESC, s.length DESC, s.duration_ms ASC
             LIMIT ?";
     $stmt = $conn->prepare($sql);
