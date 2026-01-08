@@ -9,7 +9,7 @@ docker compose up -d
 ```
 
 ## DB 준비
-- 마이그레이션: `source /var/www/html/fun/snake/db/migrations/0001_init.sql`
+- 마이그레이션: `source /var/www/html/fun/snake/dbinit/0001_init.sql`
 - 테이블: `snake_scores` (score/length/최고속도/시간, 회원 로그인 기준 랭킹)
 
 ## API
