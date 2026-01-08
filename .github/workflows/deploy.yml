@@ -37,13 +37,13 @@ jobs:
             echo "::error::Configure FTP_SERVER/FTP_USERNAME/FTP_PASSWORD secrets before deploying." >&2
             exit 1
           fi
-          ROOT="fun"
+          ROOT="ciiwol/www"
           REPO_NAME="${GITHUB_REPOSITORY##*/}"
           SLUG="$(printf '%s' "$REPO_NAME" | tr '[:upper:]' '[:lower:]')"
           case "$SLUG" in
             pick-a-ju) SLUG="pickaju" ;;
           esac
-          DIR="${ROOT}/${SLUG}/"
+          DIR="${ROOT}/fun/${SLUG}/"
           case "$DIR" in
             */) : ;;
             *) DIR="${DIR%/}/" ;;
