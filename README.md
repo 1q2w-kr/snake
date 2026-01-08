@@ -12,6 +12,13 @@ docker compose up -d
 - 마이그레이션: `source /var/www/html/fun/snake/dbinit/0001_init.sql`
 - 테이블: `snake_scores` (score/length/최고속도/시간, 회원 로그인 기준 랭킹)
 
+## DB Init Quickstart
+1) Apply once:
+```bash
+mysql -u <user> -p <db> < fun/snake/dbinit/0001_init.sql
+```
+2) API는 `information_schema` 체크 후 테이블이 없을 때만 초기화합니다.
+
 ## API
 - POST `/fun/snake/api/game.php` action `submit` (로그인 필요): `{ sessionToken, score, length, durationMs, maxSpeedFps }`
 - GET `/fun/snake/api/game.php?action=leaderboard&limit=10`
