@@ -16,8 +16,8 @@ if (!function_exists('snakeEnsureSchema')) {
             }
 
             $migrationPaths = [
-                '/www/fun/snake/db/migrations/0001_init.sql',
-                __DIR__ . '/../db/migrations/0001_init.sql',
+                '/www/fun/snake/dbinit/0001_init.sql',
+                __DIR__ . '/../dbinit/0001_init.sql',
             ];
             foreach ($migrationPaths as $path) {
                 if (file_exists($path)) {
