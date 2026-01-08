@@ -98,6 +98,20 @@ jobs:
           for path in [".", "fun", "www", "ciiwol", "ciiwol/www", "ciiwol/www/fun", "www/fun", "/ciiwol/www/fun/snake", "/www/fun/snake", "fun/snake", "www/fun/snake", "ciiwol/www/fun/snake"]:
               print("CWD", path, ":", safe_cwd(path))
 
+          try:
+              ftp.cwd("/www/fun/snake")
+              print("WRITE CWD OK:", ftp.pwd())
+              test_dir = ".__ftp_write_test__"
+              try:
+                  ftp.mkd(test_dir)
+                  print("MKD OK:", test_dir)
+                  ftp.rmd(test_dir)
+                  print("RMD OK:", test_dir)
+              except Exception as e:
+                  print("WRITE TEST FAIL:", e)
+          except Exception as e:
+              print("WRITE CWD FAIL:", e)
+
           ftp.quit()
           PY
         env:
