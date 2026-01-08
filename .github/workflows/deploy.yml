@@ -57,6 +57,55 @@ jobs:
             echo "port=21"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Debug FTP working dir
+        run: |
+          python - <<'PY'
+          import ftplib
+          import os
+
+          server = os.environ.get("FTP_SERVER")
+          user = os.environ.get("FTP_USERNAME")
+          pw = os.environ.get("FTP_PASSWORD")
+          if not (server and user and pw):
+              raise SystemExit("Missing FTP_SERVER/FTP_USERNAME/FTP_PASSWORD")
+
+          ftp = ftplib.FTP()
+          ftp.connect(server, 21, timeout=30)
+          ftp.login(user, pw)
+
+          def safe_pwd():
+              try:
+                  return ftp.pwd()
+              except Exception as e:
+                  return f"PWD failed: {e}"
+
+          def safe_nlst(path):
+              try:
+                  return ftp.nlst(path)
+              except Exception as e:
+                  return [f"NLST failed for {path}: {e}"]
+
+          def safe_cwd(path):
+              try:
+                  ftp.cwd(path)
+                  return f"OK: {path} -> {ftp.pwd()}"
+              except Exception as e:
+                  return f"FAIL: {path} -> {e}"
+
+          print("PWD:", safe_pwd())
+          for path in [".", "/", "/ciiwol", "/ciiwol/www", "/www", "/fun", "/ciiwol/www/fun", "/www/fun"]:
+              print("NLST", path, ":", safe_nlst(path))
+
+          for path in [".", "fun", "www", "ciiwol", "ciiwol/www", "ciiwol/www/fun", "www/fun", "/ciiwol/www/fun/snake", "/www/fun/snake", "fun/snake", "www/fun/snake", "ciiwol/www/fun/snake"]:
+              print("CWD", path, ":", safe_cwd(path))
+
+          ftp.quit()
+          PY
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+
       - name: Deploy to Cafe24 via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
