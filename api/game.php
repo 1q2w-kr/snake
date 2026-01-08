@@ -52,7 +52,9 @@ if (!isset($conn)) {
     jsonError('database_error', 'Database connection failed', 500);
 }
 
-ensureDatabaseSchema($conn);
+if (!ensureDatabaseSchema($conn)) {
+    jsonError('db_init_failed', 'Database schema initialization failed', 500);
+}
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -255,13 +257,25 @@ function jsonError($error, $message, $code = 400) {
 
 function ensureDatabaseSchema($conn) {
     static $checked = false;
-    if ($checked) return;
+    if ($checked) return true;
     $checked = true;
 
     try {
-        $result = $conn->query("SHOW TABLES LIKE 'snake_scores'");
-        if ($result && $result->num_rows > 0) {
-            return;
+        $stmt = $conn->prepare(
+            "SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?"
+        );
+        if (!$stmt) {
+            error_log('snake: schema check prepare failed - ' . $conn->error);
+            return false;
+        }
+        $table = 'snake_scores';
+        $stmt->bind_param('s', $table);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        if ($row && (int) $row['cnt'] > 0) {
+            return true;
         }
 
         $migrationSql = null;
@@ -276,24 +290,8 @@ function ensureDatabaseSchema($conn) {
             }
         }
         if ($migrationSql === false || $migrationSql === null) {
-            // Inline fallback if file cannot be read
-            $migrationSql = <<<SQL
-CREATE TABLE IF NOT EXISTS snake_scores (
-    score_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    member_srl BIGINT UNSIGNED NULL,
-    identity_hash CHAR(64) NOT NULL,
-    session_token CHAR(36) NOT NULL,
-    score INT UNSIGNED NOT NULL,
-    length INT UNSIGNED NOT NULL,
-    max_speed_fps DECIMAL(5,2) NOT NULL,
-    duration_ms INT UNSIGNED NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_session_token (session_token),
-    INDEX idx_ranking (score, length, duration_ms),
-    INDEX idx_member_history (member_srl, created_at DESC),
-    INDEX idx_identity (identity_hash)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-SQL;
+            error_log('snake: migration file not found');
+            return false;
         }
 
         if ($conn->multi_query($migrationSql)) {
@@ -302,15 +300,13 @@ SQL;
                     $res->free();
                 }
             } while ($conn->more_results() && $conn->next_result());
-            // Final existence check to ensure success
-            $check = $conn->query("SHOW TABLES LIKE 'snake_scores'");
-            if (!$check || $check->num_rows === 0) {
-                throw new RuntimeException('snake_scores table still missing after migration');
-            }
         } else {
-            throw new RuntimeException('migration failed - ' . $conn->error);
+            error_log('snake: migration failed - ' . $conn->error);
+            return false;
         }
     } catch (Throwable $e) {
         error_log('snake: schema check failed - ' . $e->getMessage());
+        return false;
     }
+    return true;
 }
