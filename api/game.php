@@ -32,6 +32,20 @@ foreach ($authBridgePaths as $path) {
     }
 }
 
+$guardPaths = [
+    '/www/fun/common/service/guard.php',
+    __DIR__ . '/../../common/service/guard.php',
+];
+foreach ($guardPaths as $path) {
+    if (file_exists($path)) {
+        require_once $path;
+        break;
+    }
+}
+if (function_exists('fun_service_require_enabled')) {
+    fun_service_require_enabled('snake');
+}
+
 $sessionUser = function_exists('rhxCurrentUser') ? rhxCurrentUser() : ['loggedIn' => false];
 $isLoggedIn = !empty($sessionUser['loggedIn']);
 $memberSrl = $sessionUser['memberSrl'] ?? null;
