@@ -6,6 +6,7 @@
     const MIN_SPEED_MS = 80;
     const SPEED_STEP_MS = 6;
     const BEST_SCORE_KEY = 'snake_best_score';
+    const CONSENT_COOKIE_KEY = '1q2w_consent';
 
     const DIRECTIONS = {
         up: { x: 0, y: -1 },
@@ -13,6 +14,71 @@
         left: { x: -1, y: 0 },
         right: { x: 1, y: 0 },
     };
+
+    function parseConsentFromCookie() {
+        try {
+            const record = document.cookie
+                .split('; ')
+                .find((chunk) => chunk.startsWith(`${CONSENT_COOKIE_KEY}=`));
+            if (!record || typeof window.atob !== 'function') {
+                return false;
+            }
+            const encoded = record.substring((`${CONSENT_COOKIE_KEY}=`).length);
+            const decoded = window.atob(encoded);
+            const parsed = JSON.parse(decoded);
+            if (!parsed || parsed.v !== '1.0.0' || !parsed.choices) {
+                return false;
+            }
+            const ts = typeof parsed.ts === 'number' ? parsed.ts : null;
+            if (ts && (Date.now() - ts * 1000) > 180 * 24 * 60 * 60 * 1000) {
+                return false;
+            }
+            return !!parsed.choices.functional;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function hasFunctionalConsent() {
+        if (window.OneQ2wConsent && typeof window.OneQ2wConsent.hasFunctionalConsent === 'function') {
+            try {
+                return window.OneQ2wConsent.hasFunctionalConsent();
+            } catch (_) {
+                return false;
+            }
+        }
+        return parseConsentFromCookie();
+    }
+
+    function readBestScore() {
+        if (!hasFunctionalConsent()) {
+            return 0;
+        }
+        try {
+            return Number(localStorage.getItem(BEST_SCORE_KEY) || 0);
+        } catch (_) {
+            return 0;
+        }
+    }
+
+    function writeBestScore(value) {
+        if (!hasFunctionalConsent()) {
+            return;
+        }
+        try {
+            localStorage.setItem(BEST_SCORE_KEY, String(value));
+        } catch (_) {
+            // Ignore localStorage failures.
+        }
+    }
+
+    function clearBestScore() {
+        try {
+            localStorage.removeItem(BEST_SCORE_KEY);
+        } catch (_) {
+            // Ignore localStorage failures.
+        }
+    }
 
     class SnakeGame {
         constructor(onChange, onGameOver) {
@@ -229,7 +295,7 @@
             this.historyGuest = document.querySelector('[data-history-guest]');
             this.isLoggedIn = !!(window.__FUN_AUTH_STATE__ && window.__FUN_AUTH_STATE__.loggedIn);
 
-            this.bestScore = Number(localStorage.getItem(BEST_SCORE_KEY) || 0);
+            this.bestScore = readBestScore();
             this.cells = new Map();
             this.state = null;
             this.hasPlayed = false;
@@ -252,6 +318,7 @@
                 this.loadHistory();
             }
             this.bindAuthUpdates();
+            this.bindConsentUpdates();
         }
 
         initBoard() {
@@ -354,6 +421,35 @@
             });
         }
 
+        bindConsentUpdates() {
+            const applyState = (state) => {
+                const functional = !!(state && state.choices && state.choices.functional);
+                if (functional) {
+                    this.bestScore = readBestScore();
+                } else {
+                    clearBestScore();
+                    this.bestScore = 0;
+                }
+                if (this.bestEl) {
+                    this.bestEl.textContent = this.bestScore;
+                }
+            };
+
+            if (window.OneQ2wConsent && typeof window.OneQ2wConsent.onChange === 'function') {
+                try {
+                    applyState(window.OneQ2wConsent.getState());
+                } catch (_) {
+                    applyState(null);
+                }
+                window.OneQ2wConsent.onChange(applyState);
+            } else {
+                applyState({ choices: { functional: hasFunctionalConsent() } });
+                window.addEventListener('1q2w:consent-changed', (event) => {
+                    applyState(event && event.detail);
+                });
+            }
+        }
+
         handleStart() {
             this.game.restart();
             this.hideOverlay();
@@ -367,7 +463,7 @@
         onGameOver(state) {
             if (state.score > this.bestScore) {
                 this.bestScore = state.score;
-                localStorage.setItem(BEST_SCORE_KEY, String(this.bestScore));
+                writeBestScore(this.bestScore);
             }
             this.showOverlay('게임 오버', '다시 시작 버튼을 눌러 새로 플레이하세요.', '다시 시작');
             this.updateStartLabels('restart');
