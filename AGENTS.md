@@ -2,7 +2,7 @@
 
 ## Baseline
 - Entry points: `index.php` and `api/game.php`.
-- Shared auth: load `/www/fun/common/rhymix_bridge.php` when present.
+- Shared auth: load `/www/fun/common/gnuboard_bridge.php` when present.
 - Service status: call `fun_service_require_enabled('snake')` from `fun/common/service/guard.php` in both web and API entry points.
 - Shared header: include `/fun/common/header.php` in the UI for consistent navigation and consent widgets.
 

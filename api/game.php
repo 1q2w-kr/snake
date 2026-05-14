@@ -22,8 +22,8 @@ if ($origin && $host && !in_array($host, $allowedHosts, true)) {
 
 // Auth bridge
 $authBridgePaths = [
-    '/www/fun/common/rhymix_bridge.php',
-    __DIR__ . '/../../common/rhymix_bridge.php',
+    '/www/fun/common/gnuboard_bridge.php',
+    __DIR__ . '/../../common/gnuboard_bridge.php',
 ];
 foreach ($authBridgePaths as $path) {
     if (file_exists($path)) {
@@ -46,7 +46,7 @@ if (function_exists('fun_service_require_enabled')) {
     fun_service_require_enabled('snake');
 }
 
-$sessionUser = function_exists('rhxCurrentUser') ? rhxCurrentUser() : ['loggedIn' => false];
+$sessionUser = function_exists('g7CurrentUser') ? g7CurrentUser() : ['loggedIn' => false];
 $isLoggedIn = !empty($sessionUser['loggedIn']);
 $memberSrl = $sessionUser['memberSrl'] ?? null;
 

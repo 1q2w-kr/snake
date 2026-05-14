@@ -1,7 +1,7 @@
 <?php
 
-// Shared Rhymix session bridge
-$authBridge = '/www/fun/common/rhymix_bridge.php';
+// Shared Gnuboard7 auth bridge
+$authBridge = '/www/fun/common/gnuboard_bridge.php';
 if (file_exists($authBridge)) {
     require_once $authBridge;
 }

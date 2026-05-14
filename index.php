@@ -108,7 +108,7 @@ if (file_exists($headerInclude)) {
             <?php if (!$isLoggedIn): ?>
             <div class="snake__panel-guest" data-history-guest>
                 <p class="snake__muted-text">로그인하면 내 스네이크 기록을 볼 수 있습니다.</p>
-                <a class="snake__btn snake__btn--primary" href="/?act=dispMemberLoginForm">로그인</a>
+                <a class="snake__btn snake__btn--primary" href="/login">로그인</a>
             </div>
             <?php endif; ?>
         </div>
