@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS snake_scores (
     score_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
     -- Identity tracking
-    member_srl BIGINT UNSIGNED NULL COMMENT 'Rhymix member ID for logged-in users',
+    member_srl BIGINT UNSIGNED NULL COMMENT 'Gnuboard7 user ID for logged-in users',
     identity_hash CHAR(64) NOT NULL COMMENT 'SHA256 hash for anonymization',
     session_token CHAR(36) NOT NULL COMMENT 'Unique game session token (prevents duplicate submissions)',
 
