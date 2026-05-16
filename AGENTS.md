@@ -8,4 +8,4 @@
 
 ## Deployment
 - GitHub Actions deploys to `ciiwol/www/fun/snake/` (FTP root, trailing `/` required).
-- For local uploads, use workspace `scripts/ftp_upload.py` and select `fun/snake`.
+- For local uploads, build a narrow release with `python3 scripts/build_release.py --target fun/snake` and upload the archive or changed file with `scripts/upload_release_ftp.py`.
